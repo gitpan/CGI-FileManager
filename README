@@ -144,6 +144,11 @@ Changes
      Separate CGI::FileManager::Templates
      add cfm-install.pl install script
 
+     Use CGI::Application::Plugin::Session
+     remove catching the warning of CA and require higher version of CA
+     add a test that test a particular warning
+     some subs were called as functions, now they are called as methods allowing better subclassing
+
 TODO
      - install the module as regular CPAN module and add a script that will generate the templates
        and hard-code their location in the script.

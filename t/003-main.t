@@ -3,6 +3,7 @@ use strict;
 
 
 use Test::More "no_plan";
+use Test::Warn;
 
 use lib ("blib/lib", "t/lib");
 use CGI::FileManager;
@@ -147,7 +148,11 @@ my $parent = "\Q..\E";   # the regex for matching the text shown on parent direc
 {
 
 	# this gives a warning but we use __WARN__ so we cannot use Test::Warn here
-	my $result = $t->cgiapp("/", $cookie, {rm => "change_dir", dir => "nosuch"});
+	my $result;
+	warning_like 
+		{$result = $t->cgiapp("/", $cookie, {rm => "change_dir", dir => "nosuch"})}
+		qr{Trying to change to invalid directory},
+		"invalid directory change warning";
 	like($result,  qr{It does not seem to be a correct directory. Please contact the administrator});
 }
 

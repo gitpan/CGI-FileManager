@@ -60,10 +60,10 @@ Version 0.02_03
 
 =cut
 
-our $VERSION = '0.02_03';
+our $VERSION = '0.03';
 
 use base 'CGI::Application';
-use CGI::Application::Session;
+use CGI::Application::Plugin::Session;
 use CGI::Upload;
 use File::Spec;
 use File::Basename qw(dirname);
@@ -73,9 +73,8 @@ use HTML::Template;
 #use POSIX qw(strftime);
 use File::Copy qw(move);
 use Carp qw(cluck croak);
+
 use CGI::FileManager::Templates;
-
-
 use CGI::FileManager::Auth;
 my $cookiename = "cgi-filemanager";
 
@@ -133,12 +132,9 @@ my @restricted_modes = qw(
 sub setup {
 	my $self = shift;
 	$self->start_mode("list_dir");
-	my %modes;
-	foreach my $mode (@free_modes, @restricted_modes) {
-		$modes{$mode} = $mode;
-	}
-	#$modes{"AUTOLOAD"} = "autoload";
-	$self->run_modes(%modes);
+	$self->run_modes(\@free_modes);
+	$self->run_modes(\@restricted_modes); 
+	#$self->run_modes(AUTOLOAD => "autoload");
 }
 
 # Regular CGI::Application method
@@ -146,11 +142,6 @@ sub cgiapp_prerun {
 	my $self = shift;
 	my $rm = $self->get_current_runmode();
 
-	$SIG{__WARN__} = sub {
-		if ($_[0] !~ /Replacing previous run mode/) {
-			warn $_[0];
-		}
-	}; # silence the unnecessary warning about changing run_mode
 	return if grep {$rm eq $_} @free_modes;
 
 	# Redirect to login, if necessary
@@ -177,7 +168,7 @@ sub _untaint_path {
 
 
 sub _untaint {
-	my $filename = shift;
+	my ($self, $filename) = @_;
 
 	return if not defined $filename;
 
@@ -453,7 +444,7 @@ sub delete_file {
 	my $q = $self->query;
 
 	my $filename = $q->param("filename");
-	$filename = _untaint($filename);
+	$filename = $self->_untaint($filename);
 
 	if (not $filename) {
 		warn "Tainted filename: '" . $q->param("filename") . "'";
@@ -474,7 +465,7 @@ sub remove_directory {
 	my $q = $self->query;
 
 	my $dir = $q->param("dir");
-	$dir = _untaint($dir);
+	$dir = $self->_untaint($dir);
 
 	if (not $dir) {
 		warn "Tainted diretory name: '" . $q->param("dir") . "'";
@@ -495,7 +486,7 @@ sub unzip {
 	my $q = $self->query;
 
 	my $filename = $q->param("filename");
-	$filename = _untaint($filename);
+	$filename = $self->_untaint($filename);
 	$filename = "" if $filename !~ /\.zip/i;
 
 	if (not $filename) {
@@ -547,7 +538,7 @@ sub rename {
 	my $q = $self->query;
 
 	my $old = $q->param("filename");
-	my $old_name = $old = _untaint($old);
+	my $old_name = $old = $self->_untaint($old);
 
 	if (not $old) {
 		warn "Tainted file name: '" . $q->param("filename") . "'";
@@ -576,7 +567,7 @@ sub rename {
 		}
 	}
 
-	$new = _untaint($new);
+	$new = $self->_untaint($new);
 
 	if (not $new) {
 		warn "Tainted file name: '" . $q->param("newname") . "'";
@@ -637,7 +628,7 @@ sub create_directory {
 	my $homedir = $self->session->param("homedir");
 	my $workdir = $self->_untaint_path($q->param("workdir"));
 	my $dir = $q->param("dir");
-	$dir = _untaint($dir);
+	$dir = $self->_untaint($dir);
 	if (not $dir) {
 		warn "invalid directory: '" . $q->param("dir") . "'";
 		return $self->message("Invalid directory name ? Contact the administrator");
@@ -782,6 +773,11 @@ A number of users need authentication and full access to one directory tree per 
  Separate CGI::FileManager::Templates
  add cfm-install.pl install script
 
+
+ Use CGI::Application::Plugin::Session
+ remove catching the warning of CA and require higher version of CA
+ add a test that test a particular warning
+ some subs were called as functions, now they are called as methods allowing better subclassing
 
 =head1 TODO
 

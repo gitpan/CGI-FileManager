@@ -11,13 +11,14 @@ my $builder = Module::Build->new(
 	create_readme       => 1,
 	script_files        => ['bin/cfm-passwd.pl', 'bin/cfm-install.pl'],
 	requires            => {
-		'Test::More'                => 0.47,
-		'CGI::Application'          => 3.22,
-		'CGI::Application::Session' => 0.03,
-		'HTML::Template'            => 2.6,
-		'CGI::Upload'               => 1.10,
-		'Unix::PasswdFile'          => 0,
-		'Unix::ConfigFile'          => 0.06,
+		'Test::More'                        => '0.47',
+		'Test::Warn'                        => '0',
+		'CGI::Application'                  => '3.31',
+		'CGI::Application::Plugin::Session' => '0.03',
+		'HTML::Template'                    => '2.6',
+		'CGI::Upload'                       => '1.10',
+		'Unix::PasswdFile'                  => '0',
+		'Unix::ConfigFile'                  => '0.06',
 	},
 );
 

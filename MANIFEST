@@ -1,0 +1,30 @@
+Build.PL
+Changes
+MANIFEST
+README
+META.yml # Will be created by "make dist"
+Makefile.PL
+
+bin/cfm-passwd.pl
+cgi/fm.pl
+
+lib/CGI/FileManager.pm
+lib/CGI/FileManager/Auth.pm
+
+t/00.load.t
+t/002-authentication.t
+t/003-main.t
+t/004-upload.t
+t/pod-coverage.t
+t/pod.t
+
+t/lib/CGI/FileManager/Test.pm
+
+
+# for testing only
+dir/data.txt
+dir/subdir/somefile.txt
+
+# these files are used as input files that we will upload 
+local/1.txt
+

@@ -62,12 +62,12 @@ sub cgiapp {
 	my $q = CGI->new($params);
 	my $pwfile = "$Bin/../authpasswd";
 	my $webapp = $self->{module}->new(
-#			TMPL_PATH => "$self->{root}/templates",
 		    QUERY => $q,
 			PARAMS => {
 				AUTH => {
 					PASSWD_FILE => $pwfile,
-				}
+				},
+				TMPL_PATH => "$Bin/../templates",
 #				ROOT => $self->{root},
 			},
 	    );

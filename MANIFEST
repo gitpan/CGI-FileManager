@@ -2,14 +2,14 @@ Build.PL
 Changes
 MANIFEST
 README
-META.yml # Will be created by "make dist"
-Makefile.PL
+META.yml
 
 bin/cfm-passwd.pl
-cgi/fm.pl
+bin/cfm-install.pl
 
 lib/CGI/FileManager.pm
 lib/CGI/FileManager/Auth.pm
+lib/CGI/FileManager/Templates.pm
 
 t/00.load.t
 t/002-authentication.t

@@ -38,7 +38,7 @@ WARNING
      section in the documentation.
 
 Version
-    Version 0.01
+    Version 0.02_03
 
 Description
 Methods
@@ -140,7 +140,16 @@ Changes
      Move file/directory
      Unzip file (.zip)
 
+  v0.02_02
+     Separate CGI::FileManager::Templates
+     add cfm-install.pl install script
+
 TODO
+     - install the module as regular CPAN module and add a script that will generate the templates
+       and hard-code their location in the script.
+ 
+     - Replace the Unix::ConfigFile with my own implementation
+
      Test the module on Windows and find out what need to be done to pass the windows
      tests ? Especially look at Unix::ConfigFile
 
@@ -156,14 +165,15 @@ TODO
      Security issues: can I be sure that unzipping a file will open files only under the current directory ?
      What should I do in case a file that comes from an unzip operation already exists ?
 
-     ZIP: currently the path to unzip is hard coded. It probably should be replaced by Archive::Zip - I hope
-     it can support the operation(s) I need.
+     ZIP: currently the path to unzip is hard coded. It probably should be replaced by Archive::Zip
 
      More fancy things:
      Create file
      Copy file/directory
      Unzip file (tar/gz/zip)
      Edit file (simple editor)
+
+     look at CGI::Explorer and check what is the relationsip to it ?
 
 Author
     Gabor Szabo, "<gabor@pti.co.il>"
@@ -176,6 +186,7 @@ Bugs
 
 Copyright & License
     Copyright 2004 Gabor Szabo, All Rights Reserved.
+    <http://www.szabgab.com/>
 
     This program is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.

@@ -136,18 +136,32 @@ Changes
   v0.01 2004 June 27
      Initial release
 
+  v0.02_01
+     Move file/directory
+     Unzip file (.zip)
+
 TODO
+     Test the module on Windows and find out what need to be done to pass the windows
+     tests ? Especially look at Unix::ConfigFile
+
      Show most of the error messages on the directory listing page
+ 
+     Support for filenames with funny characters (eg. space)
 
      Test all the functions, look for security issues !
      Show the current directory  (the virtual path)
      Separate footer/header
      Enable external templates
 
+     Security issues: can I be sure that unzipping a file will open files only under the current directory ?
+     What should I do in case a file that comes from an unzip operation already exists ?
+
+     ZIP: currently the path to unzip is hard coded. It probably should be replaced by Archive::Zip - I hope
+     it can support the operation(s) I need.
+
      More fancy things:
      Create file
      Copy file/directory
-     Move file/directory
      Unzip file (tar/gz/zip)
      Edit file (simple editor)
 

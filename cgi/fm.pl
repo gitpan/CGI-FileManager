@@ -1,6 +1,7 @@
 #!/usr/bin/perl -wT
 use strict;
 
+$ENV{PATH}= "";
 use lib "../lib";
 use CGI::FileManager;
 my $fm = CGI::FileManager->new(

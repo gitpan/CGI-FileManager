@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: CGI-FileManager
-version: 0.01
+version: 0.02_01
 author: Gabor Szabo <gabor@pti.co.il>
 abstract: Managing a directory structure on an HTTP server
 license: perl
@@ -14,7 +14,7 @@ requires:
 provides:
   CGI::FileManager:
     file: lib/CGI/FileManager.pm
-    version: 0.01
+    version: 0.02_01
   CGI::FileManager::Auth:
     file: lib/CGI/FileManager/Auth.pm
 generated_by: Module::Build version 0.25_01

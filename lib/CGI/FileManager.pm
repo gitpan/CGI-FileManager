@@ -60,7 +60,7 @@ Version 0.01
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02_01';
 
 use base 'CGI::Application';
 use CGI::Application::Session;
@@ -71,7 +71,7 @@ use Data::Dumper;
 use HTML::Template;
 #use Fcntl qw(:flock);
 #use POSIX qw(strftime);
-#use File::Copy;
+use File::Copy;
 use Carp qw(cluck croak);
 
 
@@ -108,7 +108,17 @@ sub cgiapp_init {
 
 # modes that can be accessed without a valid session
 my @free_modes = qw(login login_process logout about redirect); 
-my @restricted_modes = qw(list_dir change_dir upload_file delete_file create_directory remove_directory); 
+my @restricted_modes = qw(
+	list_dir 
+	change_dir 
+	upload_file 
+	delete_file 
+	create_directory 
+	remove_directory
+	rename_form
+	rename
+	unzip
+); 
 
 
 # Regular CGI::Appication method to setup the list of all run modes and the default run mode 
@@ -142,6 +152,32 @@ sub cgiapp_prerun {
 		$self->prerun_mode("redirect");
 		return;
 	}
+}
+
+
+sub _untaint_path {
+	my $path = shift;
+
+	return "" if not defined $path;
+	return "" if $path =~ /\.\./;
+	if ($path =~ m{^([\w./-]+)$}) {
+		return $1;
+	}
+
+	return "";
+}
+
+
+sub _untaint {
+	my $filename = shift;
+
+	return if not defined $filename;
+
+	return if $filename =~ /\.\./;
+	if ($filename =~ /^([\w.-]+)$/) {
+		return $1;
+	}
+	return;
 }
 
 
@@ -244,18 +280,6 @@ sub logout {
 	$t->output;
 }
 
-
-sub _untaint_path {
-	my $path = shift;
-
-	return "" if not defined $path;
-	return "" if $path =~ /\.\./;
-	if ($path =~ m{^([\w./-]+)$}) {
-		return $1;
-	}
-
-	return "";
-}
 
 
 # Changes the current directory and then lists the new current directory
@@ -367,9 +391,11 @@ sub list_dir {
 				filename    => $f,
 				filetype    => _file_type($full),
 				subdir      => -d $full,
+				zipfile     => ($full =~ /\.zip/i ? 1 : 0),
 				filedate    => scalar (localtime((stat($full))[9])),
 				size        => (stat($full))[7],
 				delete_link => $f eq ".." ? "" : _delete_link($full),
+				rename_link => $f eq ".." ? "" : _rename_link($full),
 				workdir     => $workdir,
 			};
 		}	
@@ -398,6 +424,12 @@ sub _delete_link {
 	return "";
 }
 
+sub _rename_link {
+	my ($file) = @_;
+	return "rm=rename_form;filename="  if -d $file;
+	return "rm=rename_form;filename="  if -f $file;
+	return "";
+}
 
 				
 # Delete a file from the server
@@ -443,19 +475,105 @@ sub remove_directory {
 	$self->list_dir;
 }
 
+sub unzip {
+	my $self = shift;
+	my $q = $self->query;
 
-sub _untaint {
-	my $filename = shift;
+	my $filename = $q->param("filename");
+	$filename = _untaint($filename);
+	$filename = "" if $filename !~ /\.zip/i;
 
-	return if not defined $filename;
-
-	return if $filename =~ /\.\./;
-	if ($filename =~ /^([\w.-]+)$/) {
-		return $1;
+	if (not $filename) {
+		warn "Tainted or not zip file name: '" . $q->param("filename") . "'";
+		return $self->message("Invalid filename '" . $q->param("filename") . "'. Please contact the system administrator");
 	}
-	return;
+
+	my $homedir = $self->session->param("homedir");
+	my $workdir = _untaint_path $q->param("workdir");
+
+	$filename = File::Spec->catfile($homedir, $workdir, $filename);
+	if (not -e $filename) {
+		warn "Could not find '$filename' for unzip";
+		return $self->message("File does not seem to exist.");
+	}
+
+	my $dir = File::Spec->catfile($homedir, $workdir);
+	warn "Unzipping $filename in $dir";
+	warn `cd $dir; /usr/bin/unzip -o $filename`;
+
+	$self->list_dir;
+}
+		
+
+sub rename_form {
+	my $self = shift;
+	my $q = $self->query;
+	
+	my $t = $self->load_tmpl(
+			"rename_form",
+		 	associate => $q,
+	);
+	return $t->output;
 }
 
+
+sub _move {
+	my ($self, $old, $new) = @_;
+	
+	if (-e $new) {
+		return $self->message("Target file already exist");
+	}
+	move $old, $new;
+	return $self->list_dir;
+}
+
+sub rename {
+	my $self = shift;
+	my $q = $self->query;
+
+	my $old = $q->param("filename");
+	my $old_name = $old = _untaint($old);
+
+	if (not $old) {
+		warn "Tainted file name: '" . $q->param("filename") . "'";
+		return $self->message("Invalid filename '" . $q->param("filename") . "'. Please contact the system administrator");
+	}
+
+	my $homedir = $self->session->param("homedir");
+	my $workdir = _untaint_path $q->param("workdir");
+
+	$old = File::Spec->catfile($homedir, $workdir, $old);
+	if (not -e $old) {
+		warn "Could not find '$old' for rename";
+		return $self->message("File does not seem to exist.");
+	}
+
+
+	my $new = $q->param("newname");
+	my $targetdir;
+	if ($new eq "..") {
+		if ($workdir eq "") {
+			warn "Trying to move something above the root: '" . $q->param("filename") . "'";
+			return $self->message("This wont work. Please contact the system administrator");
+		} else {
+			$new = File::Spec->catfile($homedir, dirname($workdir), $old_name);
+			return $self->_move($old, $new);
+		}
+	}
+
+	$new = _untaint($new);
+
+	if (not $new) {
+		warn "Tainted file name: '" . $q->param("newname") . "'";
+		return $self->message("Invalid filename. '" . $q->param("newname") . "' Please contact the system administrator");
+	}
+
+	$new = File::Spec->catfile($homedir, $workdir, $new);
+	if (-d $new) {
+		$new = File::Spec->catfile($new, $old_name);
+	}
+	return $self->_move($old, $new);
+}
 sub upload_file {
 	my $self = shift;
 	my $q = $self->query;
@@ -637,19 +755,35 @@ A number of users need authentication and full access to one directory tree per 
 
  Initial release
 
+=head2 v0.02_01
+
+ Move file/directory
+ Unzip file (.zip)
+
+
 =head1 TODO
 
+ Test the module on Windows and find out what need to be done to pass the windows
+ tests ? Especially look at Unix::ConfigFile
+
  Show most of the error messages on the directory listing page
+ 
+ Support for filenames with funny characters (eg. space)
 
  Test all the functions, look for security issues !
  Show the current directory  (the virtual path)
  Separate footer/header
  Enable external templates
 
+ Security issues: can I be sure that unzipping a file will open files only under the current directory ?
+ What should I do in case a file that comes from an unzip operation already exists ?
+
+ ZIP: currently the path to unzip is hard coded. It probably should be replaced by Archive::Zip - I hope
+ it can support the operation(s) I need.
+
  More fancy things:
  Create file
  Copy file/directory
- Move file/directory
  Unzip file (tar/gz/zip)
  Edit file (simple editor)
 
@@ -859,6 +993,7 @@ $tmpl{list_dir} = <<ENDHTML;
    <th>date</th>
    <th>size</th>
    <th></th>
+   <th></th>
  </tr>
  <TMPL_LOOP files>
   <tr class="<TMPL_IF NAME="__odd__">odd<TMPL_ELSE>even</TMPL_IF>">
@@ -869,12 +1004,21 @@ $tmpl{list_dir} = <<ENDHTML;
 		</a>
 	  </td>
 	<TMPL_ELSE>
-	  <td><TMPL_VAR filename></td>
+	  <TMPL_IF zipfile>
+	    <td>
+	    <a href="?rm=unzip;workdir=<TMPL_VAR workdir>;filename=<TMPL_VAR filename>">
+		<TMPL_VAR filename>
+		</a>
+		</td>
+	  <TMPL_ELSE>
+	    <td><TMPL_VAR filename></td>
+	  </TMPL_IF>
 	</TMPL_IF>
 	<td><TMPL_VAR filetype></td>
 	<td><TMPL_VAR filedate></td>
 	<td><TMPL_VAR size></td>
 	<td><TMPL_IF delete_link><a href="?workdir=<TMPL_VAR workdir>;<TMPL_VAR delete_link><TMPL_VAR filename>">delete</a></TMPL_IF></td>
+	<td><TMPL_IF rename_link><a href="?workdir=<TMPL_VAR workdir>;<TMPL_VAR rename_link><TMPL_VAR filename>">rename</a></TMPL_IF></td>
   </tr>
  </TMPL_LOOP>
 </table>
@@ -886,7 +1030,7 @@ $tmpl{list_dir} = <<ENDHTML;
 <TR><TD align="middle" colspan=2><hr></TD></TR>
 
  <tr><td align="right" valign="top">
-<form method="POST">
+<form method="GET">
 <input type="hidden"  name="rm" value="create_directory">
 <input type="hidden"  name="workdir" value="<TMPL_VAR workdir>">
 <input name="dir" size="15"></TD><TD>
@@ -910,14 +1054,14 @@ $tmpl{list_dir} = <<ENDHTML;
      <table>
        <tr>
 	   <td>
-        <form method="POST">
+        <form method="GET">
         <input type="hidden" name="rm" value="list_dir">
         <input type="hidden" name="workdir" value="<TMPL_VAR workdir>">
         <input type="submit" class="mybutton" value="Refresh">
         </form>
        </td>
        <td>
-        <form method="POST">
+        <form method="GET">
         <input type="hidden" name="rm" value="logout">
         <input type="submit" class="mybutton" value="Logout">
         </form>
@@ -958,6 +1102,29 @@ You were successfully logged out.
 <form method="POST">
 <input type="submit" value="Login again">
 </form>
+</body>
+<HTML>
+ENDHTML
+
+$tmpl{rename_form} = <<ENDHTML;
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML> 
+<HEAD>
+	<TITLE>CGI::FileManager - Rename <TMPL_VAR filename></TITLE>  
+	<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+    CSS_STYLE_SHEET
+</HEAD> 
+<body>
+<center>
+<form method="POST" action="?">
+<input type="hidden" name="rm" value="rename">
+<input type="hidden" name="workdir" value="<TMPL_VAR workdir>">
+<input type="hidden" name="filename" value="<TMPL_VAR filename>">
+Rename <TMPL_VAR filename>  to
+<input name="newname" value="<TMPL_VAR newname>">
+<input type="submit" value="Rename">
+</form>
+</center>
 </body>
 <HTML>
 ENDHTML

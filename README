@@ -1,7 +1,7 @@
 NAME
     CGI::FileManager - Managing a directory structure on an HTTP server
 
-Synopsis
+SYNOPSIS
     Enable authenticated users to do full file management on a subdirectory
     somewhere with a web server installed.
 
@@ -37,11 +37,9 @@ WARNING
      *will* change. If you are using it, please make sure you always read the Changes
      section in the documentation.
 
-Version
-    Version 0.02_03
+VERSION
+    Version 0.04
 
-Description
-Methods
 DESCRIPTION
     Enables one to do basic file management operations on a filesystem under
     an HTTP server. The actions on the file system provide hooks that let
@@ -49,6 +47,80 @@ DESCRIPTION
 
     It can be used as a base class for a simple web application that mainly
     manipulates files.
+
+Methods
+  cgiapp_init
+    Initialize application (standard CGI::Application)
+
+  setup
+    Standart CGI::Appication method to setup the list of all run modes and
+    the default run mode
+
+  cgiapp_prerun
+    Regular CGI::Application method
+
+  redirect
+    Just to easily redirect to the home page
+
+  load_tmpl
+    Change the default behaviour of CGI::Application by overriding this
+    method. By default we'll load the template from within our module.
+
+  message
+    Print an arbitrary message to the next page
+
+  login
+    Show login form
+
+  login_process
+    Processing the login information, checking authentication, configuring
+    the session object or giving error message.
+
+  authenticate
+    Called without parameter. Returns an objects that is capable to
+    authenticate a user.
+
+    By default it returns a CGI::FileManager::Auth object.
+
+    It is planned that this method will be overriden by the user to be able
+    to replace the authentication back-end. Currently the requirements from
+    the returned object is to have these methods:
+
+     $a->verify(username, password)   returns true/false
+     $a->home(username)               return the full path to the home directory of the given user
+
+    WARNING: this interface might change in the future, before we reach
+    version 1.00 Check the Changes.
+
+  logout
+    logout and mark the session accordingly.
+
+  change_dir
+    Changes the current directory and then lists the new current directory
+
+  list_dir
+    Listing the content of a directory
+
+  delete_file
+    Delete a file from the server
+
+  remove_directory
+    Remove a directory
+
+  unzip
+    unzip
+
+  rename_form
+    Rename file form
+
+  rename
+    Rename file
+
+  upload_file
+    Upload a file
+
+  create_directory
+    Create a directory
 
   DEFAULT
     To get the default behavior you can write the following code. The module
@@ -68,21 +140,6 @@ DESCRIPTION
      $fm->run;
 
     new(OPTIONS)
-    authenticate
-        Called without parameter. Returns an objects that is capable to
-        authenticate a user.
-
-        By default it returns a CGI::FileManager::Auth object.
-
-        It is planned that this method will be overriden by the user to be
-        able to replace the authentication back-end. Currently the
-        requirements from the returned object is to have these methods:
-
-         $a->verify(username, password)   returns true/false
-         $a->home(username)               return the full path to the home directory of the given user
-
-        WARNING: this interface might change in the future, before we reach
-        version 1.00 Check the Changes.
 
   META-DATA
     Theoretically we could manage some meta-data about each file in some

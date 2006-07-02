@@ -1,8 +1,9 @@
 Build.PL
 Changes
+Makefile.PL
 MANIFEST
-README
 META.yml
+README
 
 bin/cfm-passwd.pl
 bin/cfm-install.pl

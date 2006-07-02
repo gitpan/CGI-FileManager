@@ -7,7 +7,7 @@ use strict;
 
 CGI::FileManager - Managing a directory structure on an HTTP server
 
-=head1 Synopsis
+=head1 SYNOPSIS
 
 Enable authenticated users to do full file management on
 a subdirectory somewhere with a web server installed.
@@ -46,21 +46,30 @@ Now point your browser to the newly created CGI file and start managing your fil
  section in the documentation.
 
 
-=head1 Version
+=head1 VERSION
 
-Version 0.02_03
+Version 0.04
 
 
 =cut
 
-=head1 Description
+our $VERSION = '0.04';
+
+=head1 DESCRIPTION
+
+Enables one to do basic file management operations on a 
+filesystem under an HTTP server. The actions on the file system
+provide hooks that let you implement custom behavior on each 
+such event.
+
+It can be used as a base class for a simple web application
+that mainly manipulates files.
+
 
 
 =head1 Methods
 
 =cut
-
-our $VERSION = '0.03';
 
 use base 'CGI::Application';
 use CGI::Application::Plugin::Session;
@@ -82,6 +91,11 @@ my $cookiename = "cgi-filemanager";
 #Standard CGI::Application method
 #Setup the Session object and the default HTTP headers
 
+=head2 cgiapp_init
+
+Initialize application (standard CGI::Application)
+
+=cut
 sub cgiapp_init {
 	my $self = shift;
 	CGI::Session->name($cookiename);
@@ -128,7 +142,11 @@ my @restricted_modes = qw(
 ); 
 
 
-# Regular CGI::Appication method to setup the list of all run modes and the default run mode 
+=head2 setup
+
+Standart CGI::Appication method to setup the list of all run modes and the default run mode 
+
+=cut
 sub setup {
 	my $self = shift;
 	$self->start_mode("list_dir");
@@ -137,7 +155,11 @@ sub setup {
 	#$self->run_modes(AUTOLOAD => "autoload");
 }
 
-# Regular CGI::Application method
+=head2 cgiapp_prerun
+
+Regular CGI::Application method
+
+=cut
 sub cgiapp_prerun {
 	my $self = shift;
 	my $rm = $self->get_current_runmode();
@@ -180,7 +202,11 @@ sub _untaint {
 }
 
 
-# Just to easily redirect to the home page
+=head2 redirect
+
+Just to easily redirect to the home page
+
+=cut
 sub redirect {
     my $self = shift;
 	return;
@@ -191,8 +217,12 @@ sub redirect {
     
 
 
-# Change the default behaviour of CGI::Application by overriding this
-# method. By default we'll load the template from within our module.
+=head2 load_tmpl
+
+Change the default behaviour of CGI::Application by overriding this
+method. By default we'll load the template from within our module.
+
+=cut
 sub load_tmpl {
 	my $self = shift;
 
@@ -215,7 +245,11 @@ sub load_tmpl {
 	return $t;
 }
 
-# Print an arbitrary message to the next page
+=head2 message
+
+Print an arbitrary message to the next page
+
+=cut
 sub message {
 	my $self = shift;
 	my $message = shift;
@@ -229,7 +263,11 @@ sub message {
 }
 
 
-# Show login form
+=head2 login
+
+Show login form
+
+=cut
 sub login {
 	my $self = shift;
 	my $errs = shift;
@@ -245,8 +283,12 @@ sub login {
 }
 
 
-# Processing the login information, checking authentication, configuring the session object
-# or giving error message.
+=head2 login_process
+
+Processing the login information, checking authentication, configuring the session object
+or giving error message.
+
+=cut
 sub login_process {
 	my $self = shift;
 	my $q = $self->query;
@@ -269,14 +311,35 @@ sub login_process {
 	}
 }
 
-# see details in POD
+=head2 authenticate
+
+Called without parameter.
+Returns an objects that is capable to authenticate a user.
+
+By default it returns a CGI::FileManager::Auth object.
+
+It is planned that this method will be overriden by the user to be able to replace the
+authentication back-end. Currently the requirements from the returned object is to have 
+these methods:
+
+ $a->verify(username, password)   returns true/false
+ $a->home(username)               return the full path to the home directory of the given user
+
+WARNING: 
+this interface might change in the future, before we reach version 1.00 Check the Changes.
+
+=cut
 sub authenticate {
 	my $self = shift;
 	return CGI::FileManager::Auth->new($self->param("AUTH"));
 }
 
 
-# logout and mark the session accordingly.
+=head2 logout
+
+logout and mark the session accordingly.
+
+=cut
 sub logout {
 	my $self = shift;
 	$self->session->param(loggedin => 0);
@@ -288,7 +351,11 @@ sub logout {
 
 
 
-# Changes the current directory and then lists the new current directory
+=head2 change_dir
+
+Changes the current directory and then lists the new current directory
+
+=cut
 sub change_dir {
 	my $self = shift;
 	my $q = $self->query;
@@ -367,7 +434,11 @@ sub change_dir {
 	return $self->list_dir;
 }
 
-# Listing the content of a directory
+=head2 list_dir
+
+Listing the content of a directory
+
+=cut
 sub list_dir {
 	my $self = shift;
 	my $msgs = shift;
@@ -437,8 +508,12 @@ sub _rename_link {
 	return "";
 }
 
-				
-# Delete a file from the server
+
+=head2 delete_file
+
+Delete a file from the server
+
+=cut
 sub delete_file {
 	my ($self) = @_;
 	my $q = $self->query;
@@ -460,6 +535,11 @@ sub delete_file {
 	$self->list_dir;
 }
 
+=head2 remove_directory
+
+Remove a directory
+
+=cut
 sub remove_directory {
 	my ($self) = @_;
 	my $q = $self->query;
@@ -481,6 +561,11 @@ sub remove_directory {
 	$self->list_dir;
 }
 
+=head2 unzip
+
+unzip
+
+=cut
 sub unzip {
 	my $self = shift;
 	my $q = $self->query;
@@ -511,6 +596,11 @@ sub unzip {
 }
 		
 
+=head2 rename_form
+
+Rename file form
+
+=cut
 sub rename_form {
 	my $self = shift;
 	my $q = $self->query;
@@ -533,6 +623,11 @@ sub _move {
 	return $self->list_dir;
 }
 
+=head2 rename
+
+Rename file
+
+=cut
 sub rename {
 	my $self = shift;
 	my $q = $self->query;
@@ -582,6 +677,11 @@ sub rename {
 }
 
 
+=head2 upload_file
+
+Upload a file
+
+=cut
 sub upload_file {
 	my $self = shift;
 	my $q = $self->query;
@@ -621,6 +721,11 @@ sub upload_file {
 	$self->list_dir;
 }
 
+=head2 create_directory
+
+Create a directory
+
+=cut
 sub create_directory {
 	my $self = shift;
 	my $q = $self->query;
@@ -638,16 +743,6 @@ sub create_directory {
 
 	$self->list_dir;
 }
-
-=head1 DESCRIPTION
-
-Enables one to do basic file management operations on a 
-filesystem under an HTTP server. The actions on the file system
-provide hooks that let you implement custom behavior on each 
-such event.
-
-It can be used as a base class for a simple web application
-that mainly manipulates files.
 
 =head2 DEFAULT
 
@@ -671,23 +766,6 @@ The module will use the built in templates to create the pages.
 =over 4
 
 =item new(OPTIONS)
-
-=item authenticate
-
-Called without parameter.
-Returns an objects that is capable to authenticate a user.
-
-By default it returns a CGI::FileManager::Auth object.
-
-It is planned that this method will be overriden by the user to be able to replace the
-authentication back-end. Currently the requirements from the returned object is to have 
-these methods:
-
- $a->verify(username, password)   returns true/false
- $a->home(username)               return the full path to the home directory of the given user
-
-WARNING: 
-this interface might change in the future, before we reach version 1.00 Check the Changes.
 
 =back
 

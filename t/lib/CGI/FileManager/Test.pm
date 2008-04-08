@@ -57,7 +57,10 @@ sub cgiapp {
 	local $ENV{HTTP_HOST}   = $self->{http_host};
 	local $ENV{PATH_INFO}   = $path_info;
 	local $ENV{SCRIPT_NAME} = $path_info;
-	local $ENV{HTTP_COOKIE} = "$self->{cookie}=$cookie" if defined $cookie; 
+    local $ENV{HTTP_COOKIE} = '';
+    if (defined $cookie) {
+	    $ENV{HTTP_COOKIE} = "$self->{cookie}=$cookie";
+    }
 	
 	my $q = CGI->new($params);
 	my $pwfile = "$Bin/../authpasswd";
@@ -101,6 +104,7 @@ sub upload_file {
 	local $ENV{HTTP_USER_AGENT} = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.3) Gecko/20030312";
 
 	my $u;
+    ## no critic (ProhibitBarewordFileHandles)
 	local *STDIN;
 	open STDIN, "<", \$original;
 	return $self->cgiapp($path_info, $cookie, $params);
@@ -121,6 +125,7 @@ sub extract_cookie {
 }
 
 =pod
+
 sub cookie_set {
 	my ($result, $cookie) = @_;
 	$T->like($result, qr{^Set-Cookie: $COOKIE=$cookie; domain=$ENV{HTTP_HOST}; path=/}m, 'cookie set');

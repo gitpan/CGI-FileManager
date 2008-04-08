@@ -17,7 +17,7 @@ my $builder = Module::Build->new(
 		'CGI::Application::Plugin::Session' => '0.03',
 		'HTML::Template'                    => '2.6',
 		'CGI::Upload'                       => '1.10',
-		'Unix::PasswdFile'                  => '0',
+#		'Unix::PasswdFile'                  => '0',
 		'Unix::ConfigFile'                  => '0.06',
 	},
 );

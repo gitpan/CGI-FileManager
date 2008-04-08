@@ -48,12 +48,12 @@ Now point your browser to the newly created CGI file and start managing your fil
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.06';
 
 =head1 DESCRIPTION
 

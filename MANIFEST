@@ -16,8 +16,11 @@ t/00.load.t
 t/002-authentication.t
 t/003-main.t
 t/004-upload.t
-t/pod-coverage.t
-t/pod.t
+
+xt/90-pod.t
+xt/91-pod-coverage.t
+xt/99-critic.t
+xt/pod_checker.t
 
 t/lib/CGI/FileManager/Test.pm
 

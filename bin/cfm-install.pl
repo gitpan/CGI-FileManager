@@ -64,7 +64,7 @@ foreach my $name (keys %CGI::FileManager::Templates::tmpl) {
 	my $cgi_file = File::Spec->catfile($opt{dir}, "cgi", "fm.pl");
 	open my $fh, ">", $cgi_file or die "Could not open '$cgi_file' $!\n";
 	print $fh $CGI::FileManager::Templates::cgi;
-	chmod 0755, $cgi_file;
+	chmod oct(755), $cgi_file;
 }
 
 

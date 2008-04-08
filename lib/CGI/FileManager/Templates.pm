@@ -1,5 +1,13 @@
 package CGI::FileManager::Templates;
+use strict;
+use warnings;
 
+
+=head1 CONTENT
+
+css file and HTML::Template files hard coded in the application
+
+=cut
 
 our %tmpl;
 
